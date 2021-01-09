@@ -1,0 +1,30 @@
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/svelte-nest-backend/src",
+  "monorepo": true,
+  "root": "apps/svelte-nest-backend",
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "apps/svelte-nest-backend/tsconfig.app.json"
+  },
+  "projects": {
+    "svelte-nest-backend": {
+      "type": "application",
+      "root": "apps/svelte-nest-backend",
+      "entryFile": "main",
+      "sourceRoot": "apps/svelte-nest-backend/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/svelte-nest-backend/tsconfig.app.json"
+      }
+    },
+    "taskrunner": {
+      "type": "application",
+      "root": "apps/taskrunner",
+      "entryFile": "main",
+      "sourceRoot": "apps/taskrunner/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/taskrunner/tsconfig.app.json"
+      }
+    }
+  }
+}
