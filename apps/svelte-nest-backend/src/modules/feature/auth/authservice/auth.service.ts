@@ -161,14 +161,14 @@ export class AuthService {
 
     async get_packs_menu(clntinf){
         const qry = `WITH RECURSIVE MyTree AS (
-            SELECT * FROM ac.packs WHERE id IN(
+            SELECT *,false as open FROM ac.packs WHERE id IN(
             SELECT packid FROM ac.roledetails WHERE rolemasterid IN (SELECT rolemasterid FROM ac.userrole WHERE userid = $1
                                                                         AND status NOT IN ('D','I') AND company IN ('PUBLIC',$2) AND branch IN('PUBLIC',$3)
                                                                         AND siteid = $4
                                                                     ) AND STATUS ='A'
                                                 )
             UNION
-            SELECT m.* FROM ac.packs AS m JOIN MyTree AS t ON m.Id = ANY(t.parent) 
+            SELECT m.*,false as open FROM ac.packs AS m JOIN MyTree AS t ON m.Id = ANY(t.parent) 
         )
         SELECT json_agg(X) AS data FROM(SELECT * FROM MyTree) X;`
         
@@ -190,12 +190,12 @@ export class AuthService {
     createDataTree(dataset) {
         //https://stackoverflow.com/questions/18017869/build-tree-array-from-flat-array-in-javascript
         const hashTable = Object.create(null);
-        dataset.forEach(aData => hashTable[aData.id] = {...aData, childNodes: []});
+        dataset.forEach(aData => hashTable[aData.id] = {...aData, subMenu: []});
         const dataTree = [];
         dataset.forEach(Datae => {  
             if (Datae.parent  && Datae.parent.length > 0) {    
                 Datae.parent.forEach( aData => {    
-                hashTable[aData].childNodes.push(hashTable[Datae.id])
+                hashTable[aData].subMenu.push(hashTable[Datae.id])
                 });
             }
             else{

@@ -24,3 +24,4 @@ export const firebase_conf = {
   export const DEFAULT_APP_NAME = 'ac';
 
   export const DEFAULT_APP_URL = 'assetscube.com';
+  

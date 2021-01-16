@@ -67,13 +67,49 @@ export class PreauthMiddleware implements NestMiddleware {
                     
                     let user = this.userMapper(decodedToken);
 
-                    //To add subdomain : START                    
+                    //To add subdomain : START        
+                    console.log("$$$$$$$$$$$$$$$$$$$$");
                     console.log(req.header('Referer'));
-                    let d = req.header('Referer');                    
-                    let ress = d.substr(d.indexOf("//")+2);                    
-                    let ress1 = ress.substr(0,ress.indexOf("."));
-                    console.log('ress1 :'+ress1);
-                    (ress.substr(0,ress.indexOf(".")) === '')? user["siteid"] = DEFAULT_APP_NAME : user["siteid"] = ress1;
+                    let d = req.header('Referer');  
+                    console.log(req.hostname);
+                    console.log(d);
+
+                    var domAndSubdom = new RegExp('([\w]+\.)+([^\:\/]+)','gm');
+                    var subdom =  new RegExp('.*(?=\.)','gm');
+                    var dom =  new RegExp('([^\.]+$)','gm');
+                    let t = domAndSubdom.exec(d)
+
+                    console.log(t);
+                    console.log(subdom);
+                    console.log(dom);
+
+                    const regex = /([\w]+\.)+([^\:\/]+)/gm;
+                    const str = d;
+                    let m;
+
+                    while ((m = regex.exec(str)) !== null) {
+                        // This is necessary to avoid infinite loops with zero-width matches
+                        if (m.index === regex.lastIndex) {
+                            regex.lastIndex++;
+                        }
+                        
+                        // The result can be accessed through the `m`-variable.
+                        m.forEach((match, groupIndex) => {
+                            console.log(`Found match, group ${groupIndex}: ${match}`);
+                        });
+                    }
+
+                    let ress = d.substr(d.indexOf("//")+2);      
+                    
+                    let subdeomaindet = ress.substr(0,ress.lastIndexOf("."));
+                    let domaindet = ress.substr(ress.lastIndexOf(".")+1);
+                    
+                    console.log("$$$$$$$$$$$$$$$$$$$$");
+                    
+
+
+                    console.log('subdeomaindet :'+subdeomaindet);
+                    (ress.substr(0,ress.indexOf(".")) === '')? user["siteid"] = DEFAULT_APP_NAME : user["siteid"] = subdeomaindet;
                     //To add subdomain : END                    
                     
                     // To get Client Info details: START

@@ -52,6 +52,8 @@ CREATE TABLE ac.packs (
     description           varchar NOT NULL,
     type                  varchar(30) NOT NULL,
     parent                text[],
+    link                  varchar(1000),
+    icon                  varchar(100),
     status                varchar(3),
     octime			      timestamptz NOT NULL,
     lmtime			      timestamptz NOT NULL

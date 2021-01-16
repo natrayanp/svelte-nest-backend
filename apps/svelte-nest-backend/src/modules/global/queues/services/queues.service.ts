@@ -2,23 +2,28 @@ import { Injectable } from '@nestjs/common';
 import { makeWorkerUtils, WorkerUtils } from "graphile-worker";
 import { DbService } from '../../db/db.service';
 
+
 @Injectable()
 export class QueuesService {
 
     workerUtils:WorkerUtils;
-     constructor(private db:DbService,) {
-        const dd = async() => await this.createworkutils();
+
+    constructor(private db:DbService,) {
+        this.createworkutils();
     }
 
     async createworkutils(){
         this.workerUtils = await makeWorkerUtils({
-            //connectionString: "postgres:///my_db",
             pgPool:this.db.pool,
           });
     }
 
     addJob(){
+      
+    }
 
+    assign_role_after_domain_regis() {
+      
     }
 
     /*

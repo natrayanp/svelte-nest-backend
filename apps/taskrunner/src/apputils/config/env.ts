@@ -1,0 +1,1 @@
+/home/nirudhi/projects/svelte-nest-backend/apps/svelte-nest-backend/src/apputils/config/env.ts
