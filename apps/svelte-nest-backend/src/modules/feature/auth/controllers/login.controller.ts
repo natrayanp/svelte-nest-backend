@@ -3,8 +3,8 @@ import { Response } from 'express';
 import { DbService } from '../../../global/db/db.service';
 import { Request } from 'express';
 import { AuthService } from '../authservice/auth.service';
-import { DEFAULT_APP_URL } from '../../../../apputils/config/env';
-import { useremaildto } from '../dto/auth.dto';
+//import { DEFAULT_APP_URL } from '../../../../apputils/config/env';
+import { domainregisdto, useremaildto } from '../dto/auth.dto';
 import { ValidationPipe } from '../../../../apputils/pipes/validation.pipe';
 import { fireAuthService } from '../../../global/firebase/fireauth.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -51,13 +51,22 @@ export class LoginController {
 
 
     @Post('/regisdomain')
-    async regisdomain(@Req() request: Request, @Body() siteid:any){    
+    async regisdomain(@Req() request: Request, @Body() dmreg:domainregisdto){    
 
         console.log("-------------------\n regisdomain \n-------------------");        
         let clntinf = request["clntinf"];
-        console.log(siteid);
-        clntinf["siteid"] = siteid.siteid;
-        clntinf["method"] = 'subdupdate';        
+        console.log(dmreg.siteid);
+        
+        if(dmreg.registype !== 'subdomain') {
+            clntinf["siteid"] = this.authService.session_hash(dmreg.siteid,'siteid');
+            clntinf["hostname"] = dmreg.siteid;
+            clntinf["method"] = 'subwmapdupdate';
+        } else {
+            clntinf["siteid"] = dmreg.siteid;
+            clntinf["method"] = 'subdupdate';
+        }
+
+        
         let regist_det = (await this.authService.update_subdomain(clntinf));        
 
                 

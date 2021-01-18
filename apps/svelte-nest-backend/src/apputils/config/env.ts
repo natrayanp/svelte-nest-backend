@@ -12,10 +12,14 @@ export const firebase_conf = {
   }
 
 
-  export const CON_STR = ['postgresql://postgres:password123@127.0.0.1:5432/postgres'];
+  export const CON_STR = ['postgresql://postgres:password123@127.0.0.1:5432/postgres',
+                          '',
+                          '',
+                          'postgresql://postgres:password123@127.0.0.1:5432/postgres'
+                        ];
 
 
-  export const ENV = 0
+  export const ENV = 0;
   // 0 - DEV
   // 1- HEROKU
   // 2 - UAT
@@ -23,5 +27,5 @@ export const firebase_conf = {
 
   export const DEFAULT_APP_NAME = 'ac';
 
-  export const DEFAULT_APP_URL = 'assetscube.com';
+  export const DEFAULT_APP_DOMAINS = ['assetscube'];
   

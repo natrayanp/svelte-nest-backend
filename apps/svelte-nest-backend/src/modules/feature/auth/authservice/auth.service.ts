@@ -101,9 +101,8 @@ export class AuthService {
 
     }
 
-    session_hash(password){
-        console.log("inside session hash");
-        let salt = 'sesstkn'
+    session_hash(password,salt = 'sesstkn'){
+        console.log("inside session hash");        
         let myString = salt + password;   
         let myBitArray = sjcl.hash.sha256.hash(myString);        
         let myHash = sjcl.codec.hex.fromBits(myBitArray);        
@@ -143,9 +142,20 @@ export class AuthService {
 
 
     async update_subdomain(clntinf){
-        const qry = `UPDATE ac.userlogin SET siteid = $1
-                        WHERE userid = $2`;
-        let subd = await this.db.db_qry_execute(qry,[clntinf.siteid,clntinf.id]);
+
+        const qry = `UPDATE ac.userlogin SET siteid = $1, lmtime = CURRENT_TIMESTAMP
+                        WHERE userid = $2`; 
+
+        const qry1 = `INSERT ac.domainmap VALUES ($1,$2,'A',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+
+        if(clntinf.method === 'subdupdate'){
+            let subd = await this.db.db_qry_execute(qry,[clntinf.siteid,clntinf.id]);
+        } else if (clntinf.method === 'subwmapdupdate') {
+            let trn = await this.db.db_tran_start();            
+            let subd = await this.db.db_tran_execute(trn,qry,[clntinf.siteid,clntinf.id]);
+            let subd1 = await this.db.db_tran_execute(trn,qry1,[clntinf.hostname,clntinf.siteid]);
+            let trnc = await this.db.db_tran_end(trn);
+        }
     }
 
   
@@ -156,6 +166,10 @@ export class AuthService {
                     .then((e) => console.log('DB update success'))
                     .catch((e)=> console.error('update error table -> signup failure~default roleassgingment failed~userid ${clntinf.id}'));
                     //Implement logger here
+    
+        const qry1 = `INSERT INTO ac.domainmap VALUES ($1,$2,'PUBLIC','PUBLIC',$2,'A','Y',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+    
+    
     }
 
 

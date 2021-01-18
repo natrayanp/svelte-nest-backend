@@ -1,9 +1,12 @@
 import { forwardRef, Inject, Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { parse } from 'tldts';
+
 //import * as firebase from 'firebase-admin';
 //import * as serviceAccount from '../firebase/firebaseServiceAccount.json';
 import { fireAuthService } from '../../modules/global/firebase/fireauth.service';
-import { DEFAULT_APP_NAME } from '../config/env';
+import { DEFAULT_APP_NAME,ENV, DEFAULT_APP_DOMAINS } from '../config/env';
+
 import { DbService } from '../../modules/global/db/db.service';
 //import { DatabaseException } from '../db/databse.exception';
 
@@ -70,46 +73,14 @@ export class PreauthMiddleware implements NestMiddleware {
                     //To add subdomain : START        
                     console.log("$$$$$$$$$$$$$$$$$$$$");
                     console.log(req.header('Referer'));
-                    let d = req.header('Referer');  
-                    console.log(req.hostname);
-                    console.log(d);
-
-                    var domAndSubdom = new RegExp('([\w]+\.)+([^\:\/]+)','gm');
-                    var subdom =  new RegExp('.*(?=\.)','gm');
-                    var dom =  new RegExp('([^\.]+$)','gm');
-                    let t = domAndSubdom.exec(d)
-
-                    console.log(t);
-                    console.log(subdom);
-                    console.log(dom);
-
-                    const regex = /([\w]+\.)+([^\:\/]+)/gm;
-                    const str = d;
-                    let m;
-
-                    while ((m = regex.exec(str)) !== null) {
-                        // This is necessary to avoid infinite loops with zero-width matches
-                        if (m.index === regex.lastIndex) {
-                            regex.lastIndex++;
-                        }
-                        
-                        // The result can be accessed through the `m`-variable.
-                        m.forEach((match, groupIndex) => {
-                            console.log(`Found match, group ${groupIndex}: ${match}`);
-                        });
-                    }
-
-                    let ress = d.substr(d.indexOf("//")+2);      
-                    
-                    let subdeomaindet = ress.substr(0,ress.lastIndexOf("."));
-                    let domaindet = ress.substr(ress.lastIndexOf(".")+1);
-                    
-                    console.log("$$$$$$$$$$$$$$$$$$$$");
-                    
-
+                    let fullurl = req.header('Referer');  
+                    //fullurl = 'https://nat.my-m.assetscube.co.in';
+                    let {subdeomaindet} = this.parsemyurl(fullurl);
 
                     console.log('subdeomaindet :'+subdeomaindet);
-                    (ress.substr(0,ress.indexOf(".")) === '')? user["siteid"] = DEFAULT_APP_NAME : user["siteid"] = subdeomaindet;
+
+                    //(ress.substr(0,ress.indexOf(".")) === '')? user["siteid"] = DEFAULT_APP_NAME : user["siteid"] = subdeomaindet;
+                    (!subdeomaindet)? user["siteid"] = DEFAULT_APP_NAME : user["siteid"] = subdeomaindet;
                     //To add subdomain : END                    
                     
                     // To get Client Info details: START
@@ -166,6 +137,108 @@ export class PreauthMiddleware implements NestMiddleware {
 
         if(se.rows.length <= 0) return false;        
         return true;
+    }
+
+
+    async parsemyurl(url) {
+        let detss;
+        if (ENV <3 || ENV > 3) {
+            let {publicSuffix,domainWithoutSuffix,hostname} =  parse(url);
+             detss={domain:publicSuffix, subdeomaindet:domainWithoutSuffix, hostname: hostname};             
+        } else  {
+            let {domainWithoutSuffix,subdomain,hostname} =  parse(url);
+            detss= {domain:domainWithoutSuffix, subdeomaindet:subdomain, hostname: hostname};            
+        }
+
+        if(!DEFAULT_APP_DOMAINS.includes(detss.domain)) {            
+            const qry = `SELECT siteid FROM ac.domainmap
+                            WHERE hostname = $1
+                            AND STATUS = 'A'`;
+
+            let se = await this.db.db_qry_execute(qry,[detss.hostname]);
+
+            if(se.rows.length > 0) {
+                detss['subdeomaindet']=se[0];
+            }
+        }
+
+        return detss;
+
+
+
+                /*
+                    const domAndSubdom_prd = /([\w]+\.)+([^\:\/]+)/gm;
+                    const domAndSubdom_test = /([\w]+\:)+([^\:\/]+)/gm;
+                    const subdom =  /.*(?=\.)/gm;
+                    const dom =  /([^\.]+$)/gm;
+
+
+
+                    let subdeomaindet = null;
+                    
+                    const parseResult = parseDomain(
+                        // This should be a string with basic latin characters only.
+                        // More information below.
+                        //"www.some.example.co.uk",
+                        fullurl
+                    );
+                     
+                    // Check if the domain is listed in the public suffix list
+                    if (parseResult.type === ParseResultType.Listed) {
+                        const {subDomains, domain, topLevelDomains} = parseResult;
+                        console.log("------------------$$$$$$$$$$$$$$$$$$$$------------------");
+                        console.log(subDomains); // ["www", "some"]
+                        subdeomaindet = subDomains[0];
+                        console.log(domain); // "example"
+                        console.log(topLevelDomains); // ["co", "uk"]
+                        console.log("------------------$$$$$$$$$$$$$$$$$$$$------------------");
+                    } else {
+                        // Read more about other parseResult types below...
+                    }
+
+
+
+
+
+
+
+                    
+                    let domAndSubdom_str = null;
+                    let domAndSubdom_str_wocom = null;
+                    if(fullurl.match(domAndSubdom_prd) !== null) {
+                        console.log('inside prd');
+                        domAndSubdom_str = (fullurl.match(domAndSubdom_prd))[0];
+                        domAndSubdom_str_wocom = domAndSubdom_str.substr(0,domAndSubdom_str.lastIndexOf("."));
+                    } else if (fullurl.match(domAndSubdom_test) !== null) {
+                        console.log('inside test');
+                        console.log((fullurl.match(domAndSubdom_test))[0]);
+                        domAndSubdom_str = (fullurl.match(domAndSubdom_test))[0];
+                        domAndSubdom_str_wocom = domAndSubdom_str.substr(0,domAndSubdom_str.lastIndexOf(":"));
+                    }
+                    //let domAndSubdom_str_wocom = domAndSubdom_str.substr(0,domAndSubdom_str.lastIndexOf("."));
+                    console.log(domAndSubdom_str_wocom);
+                    let subdom_str = null;
+                    if(domAndSubdom_str_wocom.match(subdom) !== null) {
+                        subdom_str = (domAndSubdom_str_wocom.match(subdom))[0];
+                    }
+                    
+                    let dom_str = (domAndSubdom_str_wocom.match(dom))[0];
+
+                    
+                    console.log(domAndSubdom_str);
+                    console.log(domAndSubdom_str_wocom);
+                    console.log(subdom_str);
+                    console.log(dom_str);
+                    console.log("------------------$$$$$$$$$$$$$$$$$$$$------------------");
+
+                    let ress = fullurl.substr(fullurl.indexOf("//")+2);      
+                    
+                    let subdeomaindet = ress.substr(0,ress.lastIndexOf("."));
+                    let domaindet = ress.substr(ress.lastIndexOf(".")+1);
+                    
+                    console.log("$$$$$$$$$$$$$$$$$$$$");
+                    
+                */
     }
 
 

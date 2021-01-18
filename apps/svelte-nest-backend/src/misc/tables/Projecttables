@@ -7,7 +7,7 @@ CREATE TABLE ac.userlogin (
     useremail                  varchar(100),
     userpassword               varchar(1000),
     userstatus		           varchar(2) NOT NULL, --> (A- Active, B-Blocked, D-Deleted) 
-    emailverified               boolean,
+    emailverified              boolean,
     siteid                     varchar(100) NOT NULL,
     userstatlstupdt	           timestamptz NOT NULL,    
     octime			           timestamptz NOT NULL,
@@ -21,6 +21,19 @@ VALUES ('fsvV7CG2yDZsBt0ZsNMgCnVZgl02','admin','nat@gmail.com','','A','T','I','a
 
 INSERT INTO ac.userlogin (userid,username,useremail,userpassword,userstatus,logintype,usertype,userstatlstupdt,octime,lmtime)
 VALUES ('userid1','testuser@gmail.com','testuser@gmail.com','testpas1!','A','S','I','ac',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+
+
+--- Domain map table which allow user to user their own URL
+
+CREATE TABLE ac.domainmap (
+    hostname text NOT NULL,
+    siteid   varchar(100) NOT NULL,
+    status   varchar(3) NOT NULL,
+    octime   timestamptz NOT NULL,
+    lmtime   timestamptz NOT NULL,
+);
+
+
 
 ---Secret key detail table
 
