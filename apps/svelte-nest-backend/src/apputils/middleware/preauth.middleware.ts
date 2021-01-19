@@ -75,7 +75,7 @@ export class PreauthMiddleware implements NestMiddleware {
                     console.log(req.header('Referer'));
                     let fullurl = req.header('Referer');  
                     //fullurl = 'https://nat.my-m.assetscube.co.in';
-                    let {subdeomaindet} = this.parsemyurl(fullurl);
+                    let {subdeomaindet} = await this.parsemyurl(fullurl);
 
                     console.log('subdeomaindet :'+subdeomaindet);
 
@@ -143,11 +143,11 @@ export class PreauthMiddleware implements NestMiddleware {
     async parsemyurl(url) {
         let detss;
         if (ENV <3 || ENV > 3) {
-            let {publicSuffix,domainWithoutSuffix,hostname} =  parse(url);
-             detss={domain:publicSuffix, subdeomaindet:domainWithoutSuffix, hostname: hostname};             
+            let {subdomain,domainWithoutSuffix,hostname} =  parse(url);
+             detss={domain:domainWithoutSuffix, subdeomaindet:subdomain, hostname: hostname};             
         } else  {
-            let {domainWithoutSuffix,subdomain,hostname} =  parse(url);
-            detss= {domain:domainWithoutSuffix, subdeomaindet:subdomain, hostname: hostname};            
+            let {publicSuffix,domainWithoutSuffix,subdomain,hostname} =  parse(url);
+            detss= {domain:publicSuffix, subdeomaindet:domainWithoutSuffix, hostname: hostname};            
         }
 
         if(!DEFAULT_APP_DOMAINS.includes(detss.domain)) {            

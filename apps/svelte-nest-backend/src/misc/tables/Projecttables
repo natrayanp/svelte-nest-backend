@@ -27,10 +27,10 @@ VALUES ('userid1','testuser@gmail.com','testuser@gmail.com','testpas1!','A','S',
 
 CREATE TABLE ac.domainmap (
     hostname text NOT NULL,
-    siteid   varchar(100) NOT NULL,
+    siteid   text NOT NULL,
     status   varchar(3) NOT NULL,
     octime   timestamptz NOT NULL,
-    lmtime   timestamptz NOT NULL,
+    lmtime   timestamptz NOT NULL
 );
 
 

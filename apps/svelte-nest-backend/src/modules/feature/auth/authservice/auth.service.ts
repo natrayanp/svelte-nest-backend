@@ -146,7 +146,7 @@ export class AuthService {
         const qry = `UPDATE ac.userlogin SET siteid = $1, lmtime = CURRENT_TIMESTAMP
                         WHERE userid = $2`; 
 
-        const qry1 = `INSERT ac.domainmap VALUES ($1,$2,'A',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+        const qry1 = `INSERT INTO ac.domainmap VALUES ($1,$2,'A',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
 
         if(clntinf.method === 'subdupdate'){
             let subd = await this.db.db_qry_execute(qry,[clntinf.siteid,clntinf.id]);

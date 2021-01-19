@@ -3,7 +3,7 @@ import { Response } from 'express';
 import { DbService } from '../../../global/db/db.service';
 import { Request } from 'express';
 import { AuthService } from '../authservice/auth.service';
-//import { DEFAULT_APP_URL } from '../../../../apputils/config/env';
+import { DEFAULT_APP_URL } from '../../../../apputils/config/env';
 import { domainregisdto, useremaildto } from '../dto/auth.dto';
 import { ValidationPipe } from '../../../../apputils/pipes/validation.pipe';
 import { fireAuthService } from '../../../global/firebase/fireauth.service';
@@ -57,11 +57,11 @@ export class LoginController {
         let clntinf = request["clntinf"];
         console.log(dmreg.siteid);
         
-        if(dmreg.registype !== 'subdomain') {
+        if(dmreg.registype === 'mydomain') {
             clntinf["siteid"] = this.authService.session_hash(dmreg.siteid,'siteid');
             clntinf["hostname"] = dmreg.siteid;
             clntinf["method"] = 'subwmapdupdate';
-        } else {
+        } else if (dmreg.registype === 'subdomain'){
             clntinf["siteid"] = dmreg.siteid;
             clntinf["method"] = 'subdupdate';
         }
@@ -74,13 +74,19 @@ export class LoginController {
         this.eventEmitter.emit(
             'domain.regis.completed',clntinf);
         console.log("after event");
-
+        let mm;
+        console.log(dmreg.registype);
+        if(dmreg.registype === 'mydomain'){
+            mm = 'Registration successful.  Please login with your URL: https://'+ clntinf["hostname"];
+        }else if (dmreg.registype === 'subdomain'){
+            mm = 'Registration successful.  Please login with your URL: https://'+ clntinf["siteid"] + '.' + DEFAULT_APP_URL;
+        }
         
         return {
             success: true,
             data: [],
             error: '',
-            message: 'Registration successful.  Please login with your URL: https://'+ clntinf["siteid"] + '.' + DEFAULT_APP_URL,
+            message: mm,
           }  
     }
 
