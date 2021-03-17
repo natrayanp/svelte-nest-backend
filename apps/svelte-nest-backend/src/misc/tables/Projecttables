@@ -8,7 +8,7 @@ CREATE TABLE ac.userlogin (
     userpassword               varchar(1000),
     userstatus		           varchar(2) NOT NULL, --> (A- Active, B-Blocked, D-Deleted) 
     emailverified              boolean,
-    siteid                     varchar(100) NOT NULL,
+    siteid                     varchar(100) NOT NULL,  --> This tobe depricated
     userstatlstupdt	           timestamptz NOT NULL,    
     octime			           timestamptz NOT NULL,
     lmtime			           timestamptz NOT NULL,
@@ -23,14 +23,17 @@ INSERT INTO ac.userlogin (userid,username,useremail,userpassword,userstatus,logi
 VALUES ('userid1','testuser@gmail.com','testuser@gmail.com','testpas1!','A','S','I','ac',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 
 
+CREATE SEQUENCE companyid_seq START 1;
+
 --- Domain map table which allow user to user their own URL
 
 CREATE TABLE ac.domainmap (
-    hostname text NOT NULL,
-    siteid   text NOT NULL,
-    status   varchar(3) NOT NULL,
-    octime   timestamptz NOT NULL,
-    lmtime   timestamptz NOT NULL
+    hostname    text NOT NULL UNIQUE,    
+    siteid      text NOT NULL,
+    companyid   varchar(100) NOT NULL DEFAULT 'CPYID'||nextval('companyid_seq'::regclass)::varchar(100),
+    status      varchar(3) NOT NULL,
+    octime      timestamptz NOT NULL,
+    lmtime      timestamptz NOT NULL
 );
 
 
@@ -51,7 +54,7 @@ CREATE TABLE ac.loginh (
     userid 		               varchar(100) NOT NULL,
     ipaddress                  varchar(25),
     sessionid                  varchar(100),
-    siteid                     varchar(100),  --> nc - Nawalcube, dv - developer, au - auth
+    companyid                  varchar(100),
     logintime                  timestamptz NOT NULL, 
     logoutime                  timestamptz 
 );
@@ -87,6 +90,58 @@ insert into ac.packs values ('PKS11','user role','Roles','This has the functions
 insert into ac.packs values ('PKS12','User Settings','Users','This has the functions for user set up','function',ARRAY['PKS10'],'A',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 */
 
+
+CREATE SEQUENCE companypacksid_seq START 1;
+
+-- SITE Packages  (This attached to the company)
+CREATE TABLE ac.companypacks (
+    id                    text NOT NULL CONSTRAINT sitepackid PRIMARY KEY DEFAULT 'CPCKID'||nextval('companypacksid_seq'::regclass)::text,
+    companyid             varchar(100) NOT NULL,
+    packid                varchar(20) NOT NULL,  --> This can have only PACK type from pack table
+    startdate             timestamptz NOT NULL,
+    expirydate            timestamptz NOT NULL,
+    userrolelimit         numeric(10),
+    userlimit             numeric(10),  
+    branchlimit           numeric(10),
+    status                varchar(3),
+    octime			      timestamptz NOT NULL,
+    lmtime			      timestamptz NOT NULL
+);
+
+
+
+-- SITE Plan (This is the plan card)
+CREATE TABLE ac.plan (
+    id                    varchar(20) NOT NULL CONSTRAINT planid PRIMARY KEY,
+    name                  varchar(100) NOT NULL,
+    displayname           varchar(50) NOT NULL,
+    description           varchar NOT NULL,
+    currency              varchar(3),
+    amount                numeric(15,2),
+    discountedamt         numeric(15,2),
+    startdate             timestamptz NOT NULL,
+    enddate               timestamptz NOT NULL,
+    status                varchar(3),
+    octime			      timestamptz NOT NULL,
+    lmtime			      timestamptz NOT NULL
+);
+
+-- SITE Plan PACKs  (This is the plan card)
+CREATE TABLE ac.planpacks (
+    id                    varchar(20) NOT NULL CONSTRAINT planpackid PRIMARY KEY,    
+    packid                varchar(20) NOT NULL,  --> This can have only PACK type from pack table
+    planid                varchar(20) NOT NULL,
+    userrolelimit         numeric(10),
+    userlimit             numeric(10),  
+    branchlimit           numeric(10),
+    durationmonth         numeric(10),
+    status                varchar(3),
+    octime			      timestamptz NOT NULL,
+    lmtime			      timestamptz NOT NULL
+)
+
+
+
 --RoleMaster
 
 CREATE TABLE ac.rolemaster (    
@@ -94,9 +149,8 @@ CREATE TABLE ac.rolemaster (
     name                  varchar(100) NOT NULL,
     displayname           varchar(50) NOT NULL,
     description           varchar NOT NULL,
-    company               varchar(30) NOT NULL,
-    branch                varchar(30) NOT NULL,
-    siteid                varchar(30) NOT NULL,    
+    companyid             varchar(30) NOT NULL,
+    branchid              varchar(30) NOT NULL,     
     status                varchar(3),
     octime			      timestamptz NOT NULL,
     lmtime			      timestamptz NOT NULL,
@@ -117,9 +171,8 @@ insert into ac.ROLEMASTER values ('ROLMA2','defaultadmin','defaultadmin','This i
         name                  varchar(100) NOT NULL,
         displayname           varchar(50) NOT NULL,
         description           varchar NOT NULL,
-        company               varchar(30) NOT NULL,
-        branch                varchar(30) NOT NULL,
-        siteid                varchar(30) NOT NULL,    
+        companyid             varchar(30) NOT NULL,
+        branchid              varchar(30) NOT NULL,        
         status                varchar(3) NOT NULL,
         octime			      timestamptz NOT NULL,
         lmtime			      timestamptz NOT NULL
@@ -135,10 +188,10 @@ insert into ac.defaultrolemaster values ('DROLMA2','defaultadmin','defaultadmin'
 CREATE TABLE ac.roledetails (    
     id                    varchar(20) NOT NULL CONSTRAINT roledetailsid PRIMARY KEY, 
     rolemasterid          varchar(100) NOT NULL,    
-    packid                varchar(20) NOT NULL,  --> This can have only function type from pack table
-    company               varchar(30) NOT NULL,
-    branch                varchar(30) NOT NULL,
-    siteid                varchar(30) NOT NULL,        
+    packfuncid            varchar(20) NOT NULL,  --> This can have only function type from pack table
+    packpackid            
+    companyid             varchar(30) NOT NULL,
+    branchid              varchar(30) NOT NULL,    
     octime			      timestamptz NOT NULL,
     lmtime			      timestamptz NOT NULL
 );
@@ -158,9 +211,8 @@ CREATE TABLE ac.defaultroledetails (
     id                    varchar(20) NOT NULL CONSTRAINT droledetailsid PRIMARY KEY, 
     rolemasterid          varchar(100) NOT NULL,    
     packid                varchar(20) NOT NULL,  --> This can have only function type from pack table
-    company               varchar(30) NOT NULL,
-    branch                varchar(30) NOT NULL,
-    siteid                varchar(30) NOT NULL,        
+    companyid             varchar(30) NOT NULL,
+    branchid              varchar(30) NOT NULL,       
     octime			      timestamptz NOT NULL,
     lmtime			      timestamptz NOT NULL
 );
@@ -178,9 +230,8 @@ insert into ac.defaultroledetails values ('DROLDET6','ROLMA2','PKS12','PUBLIC','
 CREATE TABLE ac.userrole ( 
     userid 		          varchar(100) NOT NULL,
     rolemasterid          varchar(20) NOT NULL,       
-    company               varchar(30) NOT NULL,
-    branch                varchar(30) NOT NULL,
-    siteid                varchar(30) NOT NULL,    
+    companyid             varchar(30) NOT NULL,
+    branchid              varchar(30) NOT NULL,      
     status                varchar(3) NOT NULL,  --> D -Delete / A - Active
     isdefault             varchar(3) NOT NULL,  --> Y/N
     octime			      timestamptz NOT NULL,
@@ -189,7 +240,39 @@ CREATE TABLE ac.userrole (
 
 
 
-
+---
+CREATE TABLE ac.company (
+        companyId               varchar(100) NOT NULL UNIQUE,        
+        companyName             text NOT NULL,
+        companyShortName        varchar(100) NOT NULL,
+        companyCategory         varchar(100) NOT NULL,
+        companyStatus           varchar(3) NOT NULL,  --> D -Delete / A - Active
+        companyDescription      text NOT NULL,
+        companyImageUrl         text,
+        companyLogo             text,
+        companyIndustry         varchar(100) NOT NULL,
+        companyTaxID            varchar(100) NOT NULL,
+        companyAddLine1         varchar(100) NOT NULL,
+        companyAddLine2         varchar(100) NOT NULL,
+        companyCity             varchar(100) NOT NULL,
+        companyState            varchar(100) NOT NULL,
+        companyCountry          varchar(100) NOT NULL,
+        companyPinCode          number NOT NULL,
+        companyPhone            text,
+        companyFax              text,
+        companyMobile           text,
+        companyWebsite          text,
+        companyEmail            text,
+        companyStartDate        date NOT NULL,
+        companyFiscalYear       integer NOT NULL,
+        companyTimeZone         text,
+        companyBaseCurency      varchar(3) NOT NULL,
+        companysParent          text,        
+        isdefault               varchar(3) NOT NULL,  --> Y/N
+        lmuserid                varchar(100) NOT NULL,                  
+        octime			        timestamptz NOT NULL,
+        lmtime			        timestamptz NOT NULL
+);
 
 
 

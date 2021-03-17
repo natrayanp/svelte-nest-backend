@@ -142,11 +142,18 @@ export class AuthService {
 
 
     async update_subdomain(clntinf){
+        console.log("#######################################");
+        console.log(clntinf);
+        console.log("#######################################");
 
+        // Don't store siteid in the userlogin
+        //@depricated
         const qry = `UPDATE ac.userlogin SET siteid = $1, lmtime = CURRENT_TIMESTAMP
                         WHERE userid = $2`; 
 
-        const qry1 = `INSERT INTO ac.domainmap VALUES ($1,$2,'A',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+        const qry1 = `INSERT INTO ac.domainmap (hostname,siteid,status,octime,lmtime) VALUES ($1,$2,'A',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                        ON CONFLICT (hostname) 
+                        DO UPDATE SET hostname = $1, lmtime = CURRENT_TIMESTAMP`;
 
         if(clntinf.method === 'subdupdate'){
             let subd = await this.db.db_qry_execute(qry,[clntinf.siteid,clntinf.id]);
@@ -160,42 +167,78 @@ export class AuthService {
 
   
     async assign_role_after_domain_regis(clntinf){
+
         //Apply "SignupAdmin" = 'ROLMA1' role to the user after domain registration
-        const qry = `INSERT INTO ac.userrole VALUES ($1,'ROLMA1','PUBLIC','PUBLIC',$2,'A','Y',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
-        let subd = this.db.db_qry_execute(qry,[clntinf.id,clntinf.siteid])
+        const qry = `INSERT INTO ac.userrole VALUES ($1,'ROLMA1','PUBLIC','PUBLIC','A','Y',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+        let subd = this.db.db_qry_execute(qry,[clntinf.id])
                     .then((e) => console.log('DB update success'))
                     .catch((e)=> console.error('update error table -> signup failure~default roleassgingment failed~userid ${clntinf.id}'));
                     //Implement logger here
     
-        const qry1 = `INSERT INTO ac.domainmap VALUES ($1,$2,'PUBLIC','PUBLIC',$2,'A','Y',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`;
+        const qry1 = `INSERT INTO ac.domainmap (hostname,siteid,status,octime,lmtime) VALUES ($1,$2,'A',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                        ON CONFLICT (hostname) 
+                        DO UPDATE SET hostname = $1, lmtime = CURRENT_TIMESTAMP`;
+                        let subd1 = this.db.db_qry_execute(qry1,[clntinf.hostname,clntinf.siteid])
+                        .then((e) => console.log('DB update success'))
+                        .catch((e)=> console.error('update error table -> signup failure~default roleassgingment failed~userid ${clntinf.id}'));
+    
+        
+
     
     
     }
 
 
     async get_packs_menu(clntinf){
+
         const qry = `WITH RECURSIVE MyTree AS (
             SELECT *,false as open FROM ac.packs WHERE id IN(
-            SELECT packid FROM ac.roledetails WHERE rolemasterid IN (SELECT rolemasterid FROM ac.userrole WHERE userid = $1
-                                                                        AND status NOT IN ('D','I') AND company IN ('PUBLIC',$2) AND branch IN('PUBLIC',$3)
-                                                                        AND siteid = $4
-                                                                    ) AND STATUS ='A'
+            SELECT packid FROM ac.roledetails WHERE rolemasterid IN (SELECT DISTINCT rolemasterid FROM ac.userrole WHERE userid = $1
+                                                                        AND status NOT IN ('D','I') 
+                                                                        AND companyid IN ('PUBLIC',$2) 
+                                                                        AND branchid IN('PUBLIC',$3)                                                                        
+                                                                    ) AND STATUS ='A'                                                                      
                                                 )
             UNION
             SELECT m.*,false as open FROM ac.packs AS m JOIN MyTree AS t ON m.Id = ANY(t.parent) 
         )
         SELECT json_agg(X) AS data FROM(SELECT * FROM MyTree) X;`
         
-        let company, branch;
-        if(clntinf.company) company ='';
-        if(clntinf.branch) branch ='';
+        let branchid;
+        //if(clntinf.companyid) companyid ='';
+        if(clntinf.branchid) branchid ='';
 
-        let menus = await this.db.db_qry_execute(qry,[clntinf.id,company,branch,clntinf.siteid]);
+        let menus = await this.db.db_qry_execute(qry,[clntinf.id,clntinf.companyid,branchid]);
         //console.log(menus.rows[0]);
 
         //create the tree
         let mytree = this.createDataTree(menus.rows[0].data);
         console.log(JSON.stringify(mytree));
+
+
+        //Check for Package already purchased and allow only the active menus
+
+        const qry1 = `SELECT array_agg(packid::varchar(20)) FROM ac.companypacks WHERE companyid = $1;`
+
+        let pcks = await this.db.db_qry_execute(qry1,[clntinf.companyid]);
+        console.log(pcks.rows[0].array_agg);
+        let pckidarray = pcks.rows[0].array_agg;
+        console.log("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+        if (pckidarray === null) {
+            //For this MVP add only shopping product
+            this.add_packs(clntinf);
+            //TODO: Redirect to package purchase page
+        }
+        let mytreefinal = [];
+        if(pckidarray.length > 0) {
+            mytree.forEach (x => {
+                if(pckidarray.includes(x.id)) {
+                    mytreefinal.push(x);
+                }
+            });
+            return {menus:mytreefinal};
+        }
+
         return {menus:mytree};
 
     }
@@ -218,6 +261,37 @@ export class AuthService {
         });
         return dataTree;
         }
+
+
+    async add_packs(clntinf,planid="DEFAULT"){
+        console.log("going inside add_packs");
+        //Add packs at the company level
+        const qry2 = `SELECT *  FROM ac.planpacks where planid = $1`;
+        let se2 = await this.db.db_qry_execute(qry2,[planid]);
+        if(se2.rows.length <= 0) return {success:false,companyid:''};
+        console.log("*****&&&&(((*****")    ;
+        console.log(se2.rows)   ;
+        console.log(clntinf);
+        console.log("*****&&&&(((*****")    ;
+        let trn = await this.db.db_tran_start();            
+        let subd, qry3;     
+        
+        se2.rows.forEach(async x =>  {
+            let ds = {};                
+            ds["companyid"] = clntinf.companyid;
+            ds["packid"] = x.packid;
+            ds["duration"] = x.durationmonth;
+            qry3 = `INSERT INTO ac.companypacks (companyid, packid,startdate,expirydate,userrolelimit,userlimit,branchlimit,status,octime,lmtime)
+                    VALUES($1,$2,CURRENT_TIMESTAMP,current_date + make_interval(months => $3),99999,99999,99999,'A',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) `
+            subd = await this.db.db_tran_execute(trn,qry3,[ ds["companyid"],ds["packid"],ds["duration"]]);
+        });
+        let trnc = await this.db.db_tran_end(trn);
+
+        //Add default roles of the packs to SUPERADMIN
+
+
+
+    }
 
     /*
 

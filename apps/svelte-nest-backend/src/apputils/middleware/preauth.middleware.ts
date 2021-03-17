@@ -75,12 +75,20 @@ export class PreauthMiddleware implements NestMiddleware {
                     console.log(req.header('Referer'));
                     let fullurl = req.header('Referer');  
                     //fullurl = 'https://nat.my-m.assetscube.co.in';
-                    let {subdeomaindet} = await this.parsemyurl(fullurl);
-
+                    let {hostname,subdeomaindet} = await this.parsemyurl(fullurl);
+                    user["hostname"]=hostname
                     console.log('subdeomaindet :'+subdeomaindet);
 
                     //(ress.substr(0,ress.indexOf(".")) === '')? user["siteid"] = DEFAULT_APP_NAME : user["siteid"] = subdeomaindet;
-                    (!subdeomaindet)? user["siteid"] = DEFAULT_APP_NAME : user["siteid"] = subdeomaindet;
+                    if (!subdeomaindet) {
+                        user["siteid"] = DEFAULT_APP_NAME;                        
+                    } else {
+                        user["siteid"] = subdeomaindet;
+                        user["companyid"] ='';
+                        console.log("going to call");
+                        let cpid = await this.get_companyid(user);
+                        (cpid["success"])? user["companyid"]=cpid["companyid"] : user["companyid"]="";
+                    }   
                     //To add subdomain : END                    
                     
                     // To get Client Info details: START
@@ -125,6 +133,22 @@ export class PreauthMiddleware implements NestMiddleware {
     }
 
 
+    private async get_companyid(user) {
+        console.log("inside get company");
+        const qry = `SELECT COMPANYID FROM ac.domainmap 
+                        WHERE SITEID = $1
+                        AND STATUS = 'A'`;
+        console.log("nanananananananananannan");
+        let se = await this.db.db_qry_execute(qry,[user.siteid]);
+        console.log("nanananananananananannan");
+        console.log(se.rows.length);
+        console.log(se.rows[0].companyid);
+        console.log("nanananananananananannan");
+        if(se.rows.length <= 0) return {success:false,companyid:''};
+        return {success:true,companyid:se.rows[0].companyid};                
+    }
+
+
     private async chk_valid_session(user) {
 
         const qry = `SELECT SESSIONID FROM AC.LOGINH 
@@ -143,13 +167,16 @@ export class PreauthMiddleware implements NestMiddleware {
     async parsemyurl(url) {
         let detss;
         if (ENV <3 || ENV > 3) {
-            let {subdomain,domainWithoutSuffix,hostname} =  parse(url);
-             detss={domain:domainWithoutSuffix, subdeomaindet:subdomain, hostname: hostname};             
+            let {publicSuffix,domainWithoutSuffix,hostname} =  parse(url);
+             //detss={domain:domainWithoutSuffix, subdeomaindet:subdomain, hostname: hostname};             
+             detss= {domain:publicSuffix, subdeomaindet:domainWithoutSuffix, hostname: hostname};
         } else  {
-            let {publicSuffix,domainWithoutSuffix,subdomain,hostname} =  parse(url);
-            detss= {domain:publicSuffix, subdeomaindet:domainWithoutSuffix, hostname: hostname};            
+            let {domainWithoutSuffix,subdomain,hostname} =  parse(url);
+            //detss= {domain:publicSuffix, subdeomaindet:domainWithoutSuffix, hostname: hostname};     
+            detss={domain:domainWithoutSuffix, subdeomaindet:subdomain, hostname: hostname};          
         }
-
+        console.log('parsemyurl');
+        console.log(detss);
         if(!DEFAULT_APP_DOMAINS.includes(detss.domain)) {            
             const qry = `SELECT siteid FROM ac.domainmap
                             WHERE hostname = $1

@@ -24,20 +24,20 @@ export class DbService {
     }
 
     async get_connection_from_Pool() {
-        console.log('inside get_conn pool');
+        //console.log('inside get_conn pool');
 
         if(!this.pool) {
             await this.createpool();
         }
-        console.log(this.pool);
+        //console.log(this.pool);
         let cl;
         try{
             cl = await this.pool.connect();
         } catch(e) {
-            console.log(e);
+            //console.log(e);
             throw new dbexception();
         }
-        console.log("printing client");
+        //console.log("printing client");
         return cl;
         //return await this.pool.connect();
     }
@@ -48,8 +48,8 @@ export class DbService {
             let dd =  await this.db_tran_execute(client,'BEGIN');
             return client;
         } catch(e) {
-            console.log("transtart error");
-            console.log(e);
+            //console.log("transtart error");
+            //console.log(e);
             throw new dbexception();
         }        
     }
@@ -58,8 +58,8 @@ export class DbService {
         try {
             return await this.db_tran_execute(client,'COMMIT');
         } catch(e) {            
-            console.log("tran end error");
-            console.log(e);
+            //console.log("tran end error");
+            //console.log(e);
             throw new dbexception();
         } finally {
             client.release();
@@ -70,13 +70,13 @@ export class DbService {
         
         let querystr = {text: query}        
         if(data.length) querystr["values"] = data;
-        console.log(querystr);     
+        //console.log(querystr);     
         try{
             return await client.query(querystr);
         } catch (e) {
             await client.query('ROLLBACK');
             client.release();
-            console.log(e);
+            //console.log(e);
             throw new dbexception();           
         } 
     }
@@ -86,22 +86,22 @@ export class DbService {
         let querystr = {text: query}
         
         if(data.length) querystr["values"] = data;
-        console.log(querystr);
+        //console.log(querystr);
         
         try{
-            console.log('inside qry ex');
+            //console.log('inside qry ex');
             client = await this.get_connection_from_Pool();
-            console.log("---$$$$$$$$$------");
+            //console.log("---$$$$$$$$$------");
             let tt = await client.query(querystr);
-            console.log("get the result");
-            console.log(tt);
+            //console.log("get the result");
+            //console.log(tt);
             return tt;
         } catch (e) {                
-            console.log(e);
+            //console.log(e);
             throw new dbexception();
         } finally {
-            console.log('inside finally');
-            console.log(client);
+            //console.log('inside finally');
+            //console.log(client);
             if(client) client.release();
         }
     }       
