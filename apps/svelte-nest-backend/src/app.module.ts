@@ -8,6 +8,7 @@ import { routes } from './app.router';
 import { AuthModule } from "./modules/feature/auth/auth.module";
 import { TrigersModule } from './modules/global/trigers/trigers.module';
 import { QueuesModule } from './modules/global/queues/queues.module';
+import { EntityModule } from './modules/feature/entity/entity.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { QueuesModule } from './modules/global/queues/queues.module';
     DbModule,
     TrigersModule,
     QueuesModule,
+    EntityModule,
   ],
   controllers: [],
   providers: [],
