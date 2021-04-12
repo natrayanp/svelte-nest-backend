@@ -16,11 +16,11 @@ CREATE TABLE ac.userlogin (
     );
 
 -- Creation of Admin user
-INSERT INTO ac.userlogin (userid,username,useremail,userpassword,userstatus,logintype,usertype,siteid,userstatlstupdt,octime,lmtime)
-VALUES ('fsvV7CG2yDZsBt0ZsNMgCnVZgl02','admin','nat@gmail.com','','A','T','I','ac',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+--INSERT INTO ac.userlogin (userid,username,useremail,userpassword,userstatus,logintype,usertype,siteid,userstatlstupdt,octime,lmtime)
+--VALUES ('fsvV7CG2yDZsBt0ZsNMgCnVZgl02','admin','nat@gmail.com','','A','T','I','ac',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 
-INSERT INTO ac.userlogin (userid,username,useremail,userpassword,userstatus,logintype,usertype,userstatlstupdt,octime,lmtime)
-VALUES ('userid1','testuser@gmail.com','testuser@gmail.com','testpas1!','A','S','I','ac',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+--INSERT INTO ac.userlogin (userid,username,useremail,userpassword,userstatus,logintype,usertype,userstatlstupdt,octime,lmtime)
+--VALUES ('userid1','testuser@gmail.com','testuser@gmail.com','testpas1!','A','S','I','ac',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
 
 
 CREATE SEQUENCE companyid_seq START 1;
@@ -45,7 +45,7 @@ CREATE TABLE ac.secrettkn (
     seccdid 		            varchar(30) NOT NULL,  --> DDMMYYYYHHMMSS
     secoctime			        timestamp NOT NULL
     );
-INSERT INTO ac.secrettkn VALUES ('secret01','31082019193003',CURRENT_TIMESTAMP)
+INSERT INTO ac.secrettkn VALUES ('secret01','31082019193003',CURRENT_TIMESTAMP);
 
 
 
@@ -138,7 +138,7 @@ CREATE TABLE ac.planpacks (
     status                varchar(3),
     octime			      timestamptz NOT NULL,
     lmtime			      timestamptz NOT NULL
-)
+);
 
 
 
@@ -153,7 +153,7 @@ CREATE TABLE ac.rolemaster (
     branchid              varchar(30) NOT NULL,     
     status                varchar(3),
     octime			      timestamptz NOT NULL,
-    lmtime			      timestamptz NOT NULL,
+    lmtime			      timestamptz NOT NULL
 );
 
 /*
@@ -189,7 +189,7 @@ CREATE TABLE ac.roledetails (
     id                    varchar(20) NOT NULL CONSTRAINT roledetailsid PRIMARY KEY, 
     rolemasterid          varchar(100) NOT NULL,    
     packfuncid            varchar(20) NOT NULL,  --> This can have only function type from pack table
-    packpackid            
+    packpackid            varchar(30) NOT NULL,
     companyid             varchar(30) NOT NULL,
     branchid              varchar(30) NOT NULL,    
     octime			      timestamptz NOT NULL,
@@ -257,7 +257,7 @@ CREATE TABLE ac.company (
         companyCity             varchar(100) NOT NULL,
         companyState            varchar(100) NOT NULL,
         companyCountry          varchar(100) NOT NULL,
-        companyPinCode          number NOT NULL,
+        companyPinCode          integer NOT NULL,
         companyPhone            text,
         companyFax              text,
         companyMobile           text,
@@ -273,8 +273,6 @@ CREATE TABLE ac.company (
         octime			        timestamptz NOT NULL,
         lmtime			        timestamptz NOT NULL
 );
-
-
 
 
 
